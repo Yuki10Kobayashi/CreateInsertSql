@@ -8,7 +8,7 @@ def _convert_param(type, cell)
     val = cell.value
     text = cell.Text
 
-    if val == nil then
+    if val == nil || val == "null" || val == "NULL" then
         return "null"
     end
 
@@ -16,7 +16,12 @@ def _convert_param(type, cell)
     if type == "VARCHAR" then
         return "\'#{text}\'"
     elsif type == "DATETIME" then
-        return "\'#{val.strftime("%Y-%m-%d %H:%M:%S")}\'"
+
+        if val.instance_of?(String) then
+            return "\'#{val}\'"
+        else
+            return "\'#{val.strftime("%Y-%m-%d %H:%M:%S")}\'"
+        end
     else
         return text
     end
@@ -43,16 +48,15 @@ def _set_insert_query(filePath)
         sheet = book.Worksheets(1)
         #puts "SheetName:#{sheet.Name}"
 
-        # 列名の取得
         sheet.UsedRange.Rows.each do |row|
             row.Columns.each do |cell|
-
+                # 列名の取得
                 cullentRow = cell.row
 
                 # テーブル名取得
                 if cullentRow == 1 && cell.column == 1 then
                     tableName = cell.value
-                    #puts "TableName:#{tableName}"
+                    puts "TableName:#{tableName}"
 
                 # 列名リスト取得
                 elsif cullentRow == 3 && 1 < cell.column then
@@ -77,7 +81,7 @@ def _set_insert_query(filePath)
 
             if !dataList.empty? then
                 # 空の列の後に、Insert文を設定
-                insertQuery = "INSERT INTO #{tableName} \(#{columnNameList.join(",")}\) VALUES \(#{dataList.join(",")}\);"
+                insertQuery = "INSERT INTO ITHost.dbo.#{tableName} \(#{columnNameList.join(",")},INSUSR,INSTNMT,INS_DT,UPDUSR,UPDTNMT,UPD_DT\) VALUES \(#{dataList.join(",")},\'system\',\'system\',GETDATE(),\'system\',\'system\',GETDATE()\);"
                 sheet.Cells(cullentRow, maxColumnIndex + 2).value = insertQuery
                 #puts insertQuery
 
@@ -99,12 +103,13 @@ end
 # Excelファイルの一覧を取得して、INSERT文を作成します。
 puts "Insert文作成処理を開始します。"
 begin
-Dir::glob("../**/*.xlsx").each{|filePath|
+Dir::glob("./**/*.xlsx").each{|filePath|
     puts "処理対象ファイル：#{filePath}"
     _set_insert_query filePath
 }
-rescue
+rescue => exp
     puts "処理中に例外が発生しました。"
+    p exp
 ensure
     puts "Insert文作成処理が完了しました。"
 end
