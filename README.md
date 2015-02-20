@@ -7,7 +7,7 @@ Insert文を追記します。
 実行方法
 
 ```ms-dos
-ruby CreateInsert.rb
+ruby CreateInsertSql.rb
 ```
 
 もしくは、exec.batを実行
